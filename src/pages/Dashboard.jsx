@@ -61,12 +61,23 @@ function ViewCell({ id, docs }) {
 }
 
 // ─── Text Input ───────────────────────────────────────────────────────────────
-function TI({ val, onChange, center, placeholder }) {
+function TI({ val, onChange, center, placeholder, disabled }) {
   return (
     <input
-      value={val} onChange={(e) => onChange(e.target.value)}
+      value={val} onChange={(e) => !disabled && onChange(e.target.value)}
       placeholder={placeholder || ""}
-      style={center ? S.inpCenter : S.inp}
+      disabled={disabled}
+      style={center ? {
+        ...S.inpCenter,
+        background: disabled ? "#f1f5f9" : "transparent",
+        color: disabled ? "#94a3b8" : "#1e293b",
+        cursor: disabled ? "not-allowed" : "text",
+      } : {
+        ...S.inp,
+        background: disabled ? "#f1f5f9" : "transparent",
+        color: disabled ? "#94a3b8" : "#1e293b",
+        cursor: disabled ? "not-allowed" : "text",
+      }}
     />
   );
 }
@@ -413,8 +424,7 @@ export default function Dashboard() {
                     <th style={S.th}>Attachment</th>
                     <th style={S.th}>View Docs</th>
                     <th style={S.th}>Faculty Score</th>
-                    <th style={S.th}>HOD Score</th>
-                    <th style={S.th}>Director Score</th>  
+                    <th style={S.th}>HOD Score</th> 
                   </tr>
                 </thead>
                 <tbody>
@@ -428,8 +438,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`lec-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`lec-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setLec(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setLec(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setLec(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setLec(i, "hod", v)} center disabled /></td>
+
                     </tr>
                   ))}
                   <tr style={{ background: "#eff6ff" }}>
@@ -455,7 +465,7 @@ export default function Dashboard() {
                     <th style={S.th}>View Docs</th>
                     <th style={S.th}>Faculty Score</th>
                     <th style={S.th}>HOD Score</th>
-                    <th style={S.th}>Director Score</th>
+                    
                   </tr>
                 </thead>
                 <tbody>
@@ -467,8 +477,7 @@ export default function Dashboard() {
                     <td style={S.td}><DocCell id="courseFile" docs={docs} setDocs={setDocs} /></td>
                     <td style={S.viewCell}><ViewCell id="courseFile" docs={docs} /></td>
                     <td style={S.scoreCell}><TI val={courseFile.score} onChange={(v) => setCourseFile((p) => ({ ...p, score: v }))} center /></td>
-                    <td style={S.scoreCell}><TI val={courseFile.hod} onChange={(v) => setCourseFile((p) => ({ ...p, hod: v }))} center /></td>
-                    <td style={S.scoreCell}><TI val={courseFile.director} onChange={(v) => setCourseFile((p) => ({ ...p, director: v }))} center /></td>
+                    <td style={S.scoreCell}><TI val={courseFile.hod} onChange={(v) => setCourseFile((p) => ({ ...p, hod: v }))} center disabled /></td>
                   </tr>
                 </tbody>
               </table>
@@ -484,7 +493,7 @@ export default function Dashboard() {
                     <th style={S.th}>View Docs</th>
                     <th style={S.th}>Faculty Score</th>
                     <th style={S.th}>HOD Score</th>
-                    <th style={S.th}>Director Score</th>
+                    
                   </tr>
                 </thead>
                 <tbody>
@@ -495,7 +504,7 @@ export default function Dashboard() {
                     <td style={S.td}><DocCell id="innov" docs={docs} setDocs={setDocs} /></td>
                     <td style={S.viewCell}><ViewCell id="innov" docs={docs} /></td>
                     <td style={S.scoreCell}><TI val={innovScore} onChange={setInnovScore} center /></td>
-                    <td style={S.scoreCell}><TI val={innovHod} onChange={setInnovHod} center /></td>
+                    <td style={S.scoreCell}><TI val={innovHod} onChange={setInnovHod} center disabled /></td>
                     <td style={S.scoreCell}></td>
                   </tr>
                   <tr style={{ background: "#eff6ff" }}>
@@ -528,8 +537,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`proj-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`proj-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setProj(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setProj(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setProj(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setProj(i, "hod", v)} center disabled /></td>
+<td style={S.scoreCell}><TI val={r.director} onChange={(v) => setProj(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#eff6ff" }}>
@@ -562,8 +571,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`qual-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`qual-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setQual(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setQual(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setQual(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setQual(i, "hod", v)} center disabled /></td>
+<td style={S.scoreCell}><TI val={r.director} onChange={(v) => setQual(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#eff6ff" }}>
@@ -609,8 +618,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`fb-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`fb-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setFb(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setFb(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setFb(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setFb(i, "hod", v)} center disabled /></td>
+<td style={S.scoreCell}><TI val={r.director} onChange={(v) => setFb(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#e0f2fe" }}>
@@ -648,8 +657,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`dept-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`dept-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setDept(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setDept(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setDept(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setDept(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setDept(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#f5f3ff" }}>
@@ -687,7 +696,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`uni-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`uni-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setUni(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setUni(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setUni(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setUni(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#fffbeb" }}>
@@ -725,7 +735,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`soc-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`soc-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setSoc(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setSoc(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setSoc(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setSoc(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#f0fdf4" }}>
@@ -761,8 +772,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`ind-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`ind-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setInd(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setInd(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setInd(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setInd(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setInd(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -787,8 +798,8 @@ export default function Dashboard() {
                     <tr key={i} style={i % 2 === 1 ? { background: "#f8fafc" } : {}}>
                       <td style={S.tdC}>{i + 1}</td>
                       <td style={S.td}>{r.label}</td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setAcrRow(i, "hod", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setAcrRow(i, "director", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setAcrRow(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setAcrRow(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#fef2f2" }}>
@@ -843,7 +854,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`jour-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`jour-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setJour(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setJour(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setJour(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setJour(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#eff6ff" }}>
@@ -889,7 +901,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`book-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`book-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setBook(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setBook(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setBook(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setBook(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -926,7 +939,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`ict-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`ict-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setIctRow(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setIctRow(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setIctRow(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setIctRow(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#f5f3ff" }}>
@@ -966,7 +980,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`res-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`res-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setRes(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setRes(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setRes(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setRes(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1007,7 +1022,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`prj2-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`prj2-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setPrj2(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setPrj2(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setPrj2(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setPrj2(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1046,7 +1062,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`pat-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`pat-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setPat(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setPat(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setPat(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setPat(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1083,7 +1100,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`awd-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`awd-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setAwd(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setAwd(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setAwd(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setAwd(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1120,7 +1138,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`conf-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`conf-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setConf(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setConf(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setConf(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setConf(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#eff6ff" }}>
@@ -1162,7 +1181,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`prop-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`prop-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setProp(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setProp(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setProp(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setProp(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1198,7 +1218,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`fdp-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`fdp-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setFdp(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setFdp(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setFdp(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setFdp(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1231,7 +1252,8 @@ export default function Dashboard() {
                       <td style={S.td}><DocCell id={`train-${i}`} docs={docs} setDocs={setDocs} /></td>
                       <td style={S.viewCell}><ViewCell id={`train-${i}`} docs={docs} /></td>
                       <td style={S.scoreCell}><TI val={r.score} onChange={(v) => setTrain(i, "score", v)} center /></td>
-                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setTrain(i, "hod", v)} center /></td>
+                      <td style={S.scoreCell}><TI val={r.hod} onChange={(v) => setTrain(i, "hod", v)} center disabled /></td>
+                      <td style={S.scoreCell}><TI val={r.director} onChange={(v) => setTrain(i, "director", v)} center disabled /></td>
                     </tr>
                   ))}
                   <tr style={{ background: "#f0fdf4" }}>
