@@ -165,14 +165,16 @@ function ViewDocsCell({ docKey, docs }) {
 const T = { width: "100%", borderCollapse: "collapse", fontSize: 12 };
 const TH = { border: "1px solid #cbd5e1", padding: "7px 8px", background: "#0f172a", color: "#cbd5e1", fontWeight: 700, textAlign: "center", fontSize: 10 };
 const TH_HOD = { ...TH, background: "#312e81", color: "#c7d2fe" };
+const TH_DIR = { ...TH, background: "#065f46", color: "#6ee7b7" };
 const TD = { border: "1px solid #e2e8f0", padding: "4px 6px", verticalAlign: "middle" };
 const TDC = { ...TD, textAlign: "center" };
 const TDS = { ...TD, textAlign: "center", background: "#f8fafc", minWidth: 52 };
 const TDS_HOD = { ...TDS, background: "#f0f4ff" };
+const TDS_DIR = { ...TDS, background: "#f0fdf4", minWidth: 62 };
 const TDV = { ...TD, background: "#fafbff", minWidth: 110 };
 
 // ─── Faculty Form in HOD Review Mode ─────────────────────────────────────────
-function FacultyReviewForm({ faculty, hodData, setHodData }) {
+function FacultyReviewForm({ faculty, hodData, setHodData, dirData, setDirData }) {
   const set = (section, idx, field, val) => {
     setHodData(prev => {
       const updated = { ...prev };
@@ -184,6 +186,17 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
   };
   const setScalar = (key, val) => setHodData(prev => ({ ...prev, [key]: val }));
 
+  const setDir = (section, idx, field, val) => {
+    setDirData(prev => {
+      const updated = { ...prev };
+      if (!updated[section]) updated[section] = JSON.parse(JSON.stringify(faculty[section] || []));
+      if (idx === null) { updated[section] = { ...updated[section], [field]: val }; }
+      else { updated[section] = updated[section].map((r, i) => i === idx ? { ...r, [field]: val } : r); }
+      return updated;
+    });
+  };
+  const setDirScalar = (key, val) => setDirData(prev => ({ ...prev, [key]: val }));
+
   const get = (section, idx, field) => {
     if (hodData[section]) {
       const s = hodData[section];
@@ -193,6 +206,15 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
   };
   const getS = (key) => hodData[key] ?? faculty[key] ?? "";
 
+  const getDir = (section, idx, field) => {
+    if (dirData[section]) {
+      const s = dirData[section];
+      return idx === null ? (s[field] ?? "") : (s[idx]?.[field] ?? "");
+    }
+    return "";
+  };
+  const getDirS = (key) => dirData[key] ?? "";
+
   const { info, lectures, courseFile, projects, quals, feedback, deptActs, uniActs, society, industry, acr, journals, books, ict, research, patents, awards, confs, proposals, fdps, training, docs } = faculty;
 
   const rows = (arr) => arr && arr.length > 0 ? arr : [{}];
@@ -200,10 +222,10 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* HOD Review Banner */}
-      <div style={{ background: "linear-gradient(90deg,#312e81,#4338ca)", color: "#e0e7ff", borderRadius: 8, padding: "10px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+      <div style={{ background: "linear-gradient(90deg,#065f46,#059669)", color: "#d1fae5", borderRadius: 8, padding: "10px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
         <span style={{ fontSize: 18 }}>🔍</span>
         <div>
-          <strong>HOD Review Mode</strong> — Faculty data is read-only. Only <span style={{ color: "#c7d2fe", fontWeight: 700 }}>HOD Score</span> columns are editable. Click <span style={{ color: "#c7d2fe" }}>📄 View Doc</span> links to open uploaded files.
+          <strong>Director Review Mode</strong> — Faculty data and <span style={{ color: "#6ee7b7", fontWeight: 700 }}>HOD Scores</span> are read-only. Only <span style={{ color: "#6ee7b7", fontWeight: 700 }}>Director Score</span> columns are editable. Click <span style={{ color: "#6ee7b7" }}>📄 View Doc</span> links to open uploaded files.
         </div>
       </div>
 
@@ -232,7 +254,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
               <th style={TH}>SN</th><th style={TH}>Semester</th><th style={TH}>Course Code / Name</th>
               <th style={TH}>Planned</th><th style={TH}>Conducted</th>
               <th style={TH}>View Docs</th>
-              <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+              <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
             </tr></thead>
             <tbody>
               {rows(lectures).map((r, i) => (
@@ -244,7 +266,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                   <td style={TDC}><RO val={r.conducted} center /></td>
                   <td style={TDV}><ViewDocsCell docKey={`lec-${i}`} docs={docs} /></td>
                   <td style={TDS}><RO val={r.score} center /></td>
-                  <td style={TDS_HOD}><HodInput val={get("lectures", i, "hod")} onChange={v => set("lectures", i, "hod", v)} /></td>
+                  <td style={TDS_HOD}><RO val={get("lectures", i, "hod")} center /></td>
+                  <td style={TDS_DIR}><DirInput val={getDir("lectures", i, "dir")} onChange={v => setDir("lectures", i, "dir", v)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -257,7 +280,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>Course</th><th style={TH}>Title</th><th style={TH}>Details</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             <tr>
@@ -266,7 +289,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
               <td style={TDC}><RO val={courseFile?.details} center /></td>
               <td style={TDV}><ViewDocsCell docKey="cf-0" docs={docs} /></td>
               <td style={TDS}><RO val={courseFile?.score} center /></td>
-              <td style={TDS_HOD}><HodInput val={get("courseFile", null, "hod")} onChange={v => set("courseFile", null, "hod", v)} /></td>
+              <td style={TDS_HOD}><RO val={get("courseFile", null, "hod")} center /></td>
+              <td style={TDS_DIR}><DirInput val={getDir("courseFile", null, "dir")} onChange={v => setDir("courseFile", null, "dir", v)} /></td>
             </tr>
           </tbody>
         </table>
@@ -276,13 +300,14 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
       <SC title="A3. Innovative Teaching-Learning (Max 10)" accent="#8b5cf6">
         <table style={T}>
           <thead><tr>
-            <th style={TH}>Method</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>Method</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             <tr>
               <td style={TD}>Innovative / participatory teaching methods used</td>
               <td style={TDS}><RO val={faculty.innovScore} center /></td>
-              <td style={TDS_HOD}><HodInput val={getS("innovHod")} onChange={v => setScalar("innovHod", v)} /></td>
+              <td style={TDS_HOD}><RO val={getS("innovHod")} center /></td>
+              <td style={TDS_DIR}><DirInput val={getDirS("innovDir")} onChange={v => setDirScalar("innovDir", v)} /></td>
             </tr>
           </tbody>
         </table>
@@ -293,7 +318,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Project Type</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(projects).map((r, i) => (
@@ -302,7 +327,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.label} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`proj-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("projects", i, "hod")} onChange={v => set("projects", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("projects", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("projects", i, "dir")} onChange={v => setDir("projects", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -314,7 +340,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Description</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(quals).map((r, i) => (
@@ -323,7 +349,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.label} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`qual-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("quals", i, "hod")} onChange={v => set("quals", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("quals", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("quals", i, "dir")} onChange={v => setDir("quals", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -336,7 +363,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Course</th><th style={TH}>Feedback 1</th>
             <th style={TH}>Feedback 2</th><th style={TH}>Average</th>
-            <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(feedback).map((r, i) => (
@@ -349,7 +376,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                   {r.fb1 && r.fb2 ? ((n(r.fb1) + n(r.fb2)) / 2).toFixed(2) : "—"}
                 </td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("feedback", i, "hod")} onChange={v => set("feedback", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("feedback", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("feedback", i, "dir")} onChange={v => setDir("feedback", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -361,7 +389,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Activity</th><th style={TH}>Nature</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(deptActs).map((r, i) => (
@@ -371,7 +399,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.nature} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`dept-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("deptActs", i, "hod")} onChange={v => set("deptActs", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("deptActs", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("deptActs", i, "dir")} onChange={v => setDir("deptActs", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -383,7 +412,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Activity</th><th style={TH}>Nature</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(uniActs).map((r, i) => (
@@ -393,7 +422,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.nature} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`uni-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("uniActs", i, "hod")} onChange={v => set("uniActs", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("uniActs", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("uniActs", i, "dir")} onChange={v => setDir("uniActs", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -405,7 +435,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Activity</th><th style={TH}>Details</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(society).map((r, i) => (
@@ -415,7 +445,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.details} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`soc-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("society", i, "hod")} onChange={v => set("society", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("society", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("society", i, "dir")} onChange={v => setDir("society", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -427,7 +458,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Industry Name</th><th style={TH}>Details</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(industry).map((r, i) => (
@@ -437,7 +468,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.details} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`ind-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("industry", i, "hod")} onChange={v => set("industry", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("industry", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("industry", i, "dir")} onChange={v => setDir("industry", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -446,17 +478,18 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
 
       {/* G: ACR */}
       <SC title="G. Annual Confidential Report (Max 25)" accent="#ef4444">
-        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>⚠️ ACR is assessed by HOD only — faculty does not fill scores.</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>⚠️ ACR is assessed by HOD only — faculty does not fill scores. Director can add override scores.</div>
         <table style={T}>
           <thead><tr>
-            <th style={TH}>SN</th><th style={TH}>Parameter</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>SN</th><th style={TH}>Parameter</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(acr).map((r, i) => (
               <tr key={i} style={i % 2 ? { background: "#f8fafc" } : {}}>
                 <td style={TDC}>{i + 1}</td>
                 <td style={TD}><RO val={r.label} /></td>
-                <td style={TDS_HOD}><HodInput val={get("acr", i, "hod")} onChange={v => set("acr", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("acr", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("acr", i, "dir")} onChange={v => setDir("acr", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -473,7 +506,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
             <thead><tr>
               <th style={TH}>SN</th><th style={TH}>Title</th><th style={TH}>Journal</th>
               <th style={TH}>ISSN</th><th style={TH}>Indexing</th>
-              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
             </tr></thead>
             <tbody>
               {rows(journals).map((r, i) => (
@@ -485,7 +518,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                   <td style={TDC}><RO val={r.index} center /></td>
                   <td style={TDV}><ViewDocsCell docKey={`jour-${i}`} docs={docs} /></td>
                   <td style={TDS}><RO val={r.score} center /></td>
-                  <td style={TDS_HOD}><HodInput val={get("journals", i, "hod")} onChange={v => set("journals", i, "hod", v)} /></td>
+                  <td style={TDS_HOD}><RO val={get("journals", i, "hod")} center /></td>
+                  <td style={TDS_DIR}><DirInput val={getDir("journals", i, "dir")} onChange={v => setDir("journals", i, "dir", v)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -500,7 +534,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
             <thead><tr>
               <th style={TH}>SN</th><th style={TH}>Title</th><th style={TH}>Book & Publisher</th>
               <th style={TH}>ISBN</th><th style={TH}>First Author?</th>
-              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
             </tr></thead>
             <tbody>
               {rows(books).map((r, i) => (
@@ -512,7 +546,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                   <td style={TDC}><RO val={r.first} center /></td>
                   <td style={TDV}><ViewDocsCell docKey={`book-${i}`} docs={docs} /></td>
                   <td style={TDS}><RO val={r.score} center /></td>
-                  <td style={TDS_HOD}><HodInput val={get("books", i, "hod")} onChange={v => set("books", i, "hod", v)} /></td>
+                  <td style={TDS_HOD}><RO val={get("books", i, "hod")} center /></td>
+                  <td style={TDS_DIR}><DirInput val={getDir("books", i, "dir")} onChange={v => setDir("books", i, "dir", v)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -525,7 +560,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Title</th><th style={TH}>Type</th><th style={TH}>Quadrants</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(ict).map((r, i) => (
@@ -536,7 +571,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TDC}><RO val={r.quad} center /></td>
                 <td style={TDV}><ViewDocsCell docKey={`ict-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("ict", i, "hod")} onChange={v => set("ict", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("ict", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("ict", i, "dir")} onChange={v => setDir("ict", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -548,7 +584,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Degree</th><th style={TH}>Student Name</th><th style={TH}>Status</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(research).map((r, i) => (
@@ -559,7 +595,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.thesis} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`res-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("research", i, "hod")} onChange={v => set("research", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("research", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("research", i, "dir")} onChange={v => setDir("research", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -573,7 +610,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
             <thead><tr>
               <th style={TH}>SN</th><th style={TH}>Title</th><th style={TH}>Type</th>
               <th style={TH}>Filed</th><th style={TH}>Status</th><th style={TH}>File No.</th>
-              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+              <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
             </tr></thead>
             <tbody>
               {rows(patents).map((r, i) => (
@@ -586,7 +623,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                   <td style={TDC}><RO val={r.fileNo} center /></td>
                   <td style={TDV}><ViewDocsCell docKey={`pat-${i}`} docs={docs} /></td>
                   <td style={TDS}><RO val={r.score} center /></td>
-                  <td style={TDS_HOD}><HodInput val={get("patents", i, "hod")} onChange={v => set("patents", i, "hod", v)} /></td>
+                  <td style={TDS_HOD}><RO val={get("patents", i, "hod")} center /></td>
+                  <td style={TDS_DIR}><DirInput val={getDir("patents", i, "dir")} onChange={v => setDir("patents", i, "dir", v)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -600,7 +638,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Award Title</th><th style={TH}>Date</th>
             <th style={TH}>Agency</th><th style={TH}>Level</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(awards).map((r, i) => (
@@ -612,7 +650,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.level} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`awd-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("awards", i, "hod")} onChange={v => set("awards", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("awards", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("awards", i, "dir")} onChange={v => setDir("awards", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -625,7 +664,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Title / Session</th><th style={TH}>Type</th>
             <th style={TH}>Organizer</th><th style={TH}>Level</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(confs).map((r, i) => (
@@ -637,7 +676,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.level} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`conf-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("confs", i, "hod")} onChange={v => set("confs", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("confs", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("confs", i, "dir")} onChange={v => setDir("confs", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -650,7 +690,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Title</th><th style={TH}>Duration</th>
             <th style={TH}>Funding Agency</th><th style={TH}>Amount</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(proposals).map((r, i) => (
@@ -662,7 +702,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TDC}><RO val={r.amount} center /></td>
                 <td style={TDV}><ViewDocsCell docKey={`prop-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("proposals", i, "hod")} onChange={v => set("proposals", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("proposals", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("proposals", i, "dir")} onChange={v => setDir("proposals", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -675,7 +716,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Program</th><th style={TH}>Duration</th><th style={TH}>Organizer</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(fdps).map((r, i) => (
@@ -686,7 +727,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.org} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`fdp-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("fdps", i, "hod")} onChange={v => set("fdps", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("fdps", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("fdps", i, "dir")} onChange={v => setDir("fdps", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -695,7 +737,7 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
         <table style={T}>
           <thead><tr>
             <th style={TH}>SN</th><th style={TH}>Company</th><th style={TH}>Duration</th><th style={TH}>Nature</th>
-            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+            <th style={TH}>View Docs</th><th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
           </tr></thead>
           <tbody>
             {rows(training).map((r, i) => (
@@ -706,7 +748,8 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
                 <td style={TD}><RO val={r.nature} /></td>
                 <td style={TDV}><ViewDocsCell docKey={`train-${i}`} docs={docs} /></td>
                 <td style={TDS}><RO val={r.score} center /></td>
-                <td style={TDS_HOD}><HodInput val={get("training", i, "hod")} onChange={v => set("training", i, "hod", v)} /></td>
+                <td style={TDS_HOD}><RO val={get("training", i, "hod")} center /></td>
+                <td style={TDS_DIR}><DirInput val={getDir("training", i, "dir")} onChange={v => setDir("training", i, "dir", v)} /></td>
               </tr>
             ))}
           </tbody>
@@ -719,7 +762,9 @@ function FacultyReviewForm({ faculty, hodData, setHodData }) {
 // ─── Full Review Panel (opened when HOD clicks Review) ────────────────────────
 function ReviewPanel({ faculty, onBack, onSubmit }) {
   const [hodData, setHodData] = useState({});
-  const [remarks, setRemarks] = useState(faculty.hodRemarks || "");
+  const [dirData, setDirData] = useState({});
+  const [hodRemarks] = useState(faculty.hodRemarks || "");
+  const [dirRemarks, setDirRemarks] = useState(faculty.directorRemarks || "");
   const [tab, setTab] = useState("form");
 
   // Compute HOD total from hodData
@@ -761,8 +806,48 @@ function ReviewPanel({ faculty, onBack, onSubmit }) {
     return { partA, partB, total: partA + partB };
   };
 
+  // Compute Director total from dirData
+  const calcDirScore = () => {
+    const getD = (section, idx, field) => {
+      if (dirData[section]) {
+        const s = dirData[section];
+        return idx === null ? n(s[field]) : n(s[idx]?.[field]);
+      }
+      return 0;
+    };
+    const getDirS = (key) => n(dirData[key]);
+
+    const lec = (faculty.lectures || []).reduce((a, _, i) => a + getD("lectures", i, "dir"), 0);
+    const cf = getD("courseFile", null, "dir");
+    const innov = getDirS("innovDir");
+    const proj = (faculty.projects || []).reduce((a, _, i) => a + getD("projects", i, "dir"), 0);
+    const qual = (faculty.quals || []).reduce((a, _, i) => a + getD("quals", i, "dir"), 0);
+    const fb = (faculty.feedback || []).reduce((a, _, i) => a + getD("feedback", i, "dir"), 0);
+    const dept = (faculty.deptActs || []).reduce((a, _, i) => a + getD("deptActs", i, "dir"), 0);
+    const uni = (faculty.uniActs || []).reduce((a, _, i) => a + getD("uniActs", i, "dir"), 0);
+    const soc = (faculty.society || []).reduce((a, _, i) => a + getD("society", i, "dir"), 0);
+    const ind = (faculty.industry || []).reduce((a, _, i) => a + getD("industry", i, "dir"), 0);
+    const acrT = (faculty.acr || []).reduce((a, _, i) => a + getD("acr", i, "dir"), 0);
+    const partA = lec + cf + innov + proj + qual + fb + dept + uni + soc + ind + acrT;
+
+    const jour = (faculty.journals || []).reduce((a, _, i) => a + getD("journals", i, "dir"), 0);
+    const bk = (faculty.books || []).reduce((a, _, i) => a + getD("books", i, "dir"), 0);
+    const ictT = (faculty.ict || []).reduce((a, _, i) => a + getD("ict", i, "dir"), 0);
+    const res = (faculty.research || []).reduce((a, _, i) => a + getD("research", i, "dir"), 0);
+    const pat = (faculty.patents || []).reduce((a, _, i) => a + getD("patents", i, "dir"), 0);
+    const awd = (faculty.awards || []).reduce((a, _, i) => a + getD("awards", i, "dir"), 0);
+    const conf = (faculty.confs || []).reduce((a, _, i) => a + getD("confs", i, "dir"), 0);
+    const prop = (faculty.proposals || []).reduce((a, _, i) => a + getD("proposals", i, "dir"), 0);
+    const fdp = (faculty.fdps || []).reduce((a, _, i) => a + getD("fdps", i, "dir"), 0);
+    const train = (faculty.training || []).reduce((a, _, i) => a + getD("training", i, "dir"), 0);
+    const partB = jour + bk + ictT + res + pat + awd + conf + prop + fdp + train;
+
+    return { partA, partB, total: partA + partB };
+  };
+
   const { partA, partB, total } = calcHodScore();
-  const g = grade(total, 575);
+  const { partA: dirPartA, partB: dirPartB, total: dirTotal } = calcDirScore();
+  const g = grade(dirTotal > 0 ? dirTotal : total, 575);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, minHeight: "100%" }}>
@@ -783,9 +868,17 @@ function ReviewPanel({ faculty, onBack, onSubmit }) {
             <div style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6 }}>HOD Part B</div>
             <div style={{ color: "#38bdf8", fontWeight: 800, fontSize: 16 }}>{partB.toFixed(1)}</div>
           </div>
+          <div style={{ background: "#052e16", border: "1px solid #166534", borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
+            <div style={{ color: "#86efac", fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6 }}>Dir Part A</div>
+            <div style={{ color: "#4ade80", fontWeight: 800, fontSize: 16 }}>{dirPartA.toFixed(1)}</div>
+          </div>
+          <div style={{ background: "#052e16", border: "1px solid #166534", borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
+            <div style={{ color: "#86efac", fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6 }}>Dir Part B</div>
+            <div style={{ color: "#4ade80", fontWeight: 800, fontSize: 16 }}>{dirPartB.toFixed(1)}</div>
+          </div>
           <div style={{ background: g.bg, border: `2px solid ${g.color}40`, borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
-            <div style={{ color: g.color, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>HOD Total</div>
-            <div style={{ color: g.color, fontWeight: 800, fontSize: 16 }}>{total.toFixed(1)}<span style={{ fontSize: 10, color: "#94a3b8" }}>/575</span></div>
+            <div style={{ color: g.color, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>Dir Total</div>
+            <div style={{ color: g.color, fontWeight: 800, fontSize: 16 }}>{(dirTotal > 0 ? dirTotal : total).toFixed(1)}<span style={{ fontSize: 10, color: "#94a3b8" }}>/575</span></div>
           </div>
         </div>
       </div>
@@ -800,53 +893,62 @@ function ReviewPanel({ faculty, onBack, onSubmit }) {
         ))}
       </div>
 
-      {tab === "form" && <FacultyReviewForm faculty={faculty} hodData={hodData} setHodData={setHodData} />}
+      {tab === "form" && <FacultyReviewForm faculty={faculty} hodData={hodData} setHodData={setHodData} dirData={dirData} setDirData={setDirData} />}
 
       {tab === "remarks" && (
         <div style={{ background: "#fff", borderRadius: 10, padding: "22px 24px", boxShadow: "0 1px 6px rgba(0,0,0,.06)" }}>
-          <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: 15 }}>HOD Remarks & Final Submission</h3>
+          <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: 15 }}>Director Remarks & Final Submission</h3>
 
           {/* Score Summary */}
           <table style={{ ...T, marginBottom: 18 }}>
             <thead><tr>
               <th style={TH}>Section</th><th style={TH}>Max</th>
-              <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th>
+              <th style={TH}>Faculty Score</th><th style={TH_HOD}>HOD Score</th><th style={TH_DIR}>Director Score</th>
             </tr></thead>
             <tbody>
               {[
-                ["Part A — Teaching & Activities", 200, faculty.lectures?.reduce((a, r) => a + n(r.score), 0) || 0, partA],
-                ["Part B — Research & Contributions", 375, faculty.journals?.reduce((a, r) => a + n(r.score), 0) || 0, partB],
-              ].map(([label, max, fac, hod]) => (
+                ["Part A — Teaching & Activities", 200, faculty.lectures?.reduce((a, r) => a + n(r.score), 0) || 0, partA, dirPartA],
+                ["Part B — Research & Contributions", 375, faculty.journals?.reduce((a, r) => a + n(r.score), 0) || 0, partB, dirPartB],
+              ].map(([label, max, fac, hod, dir]) => (
                 <tr key={label}>
                   <td style={TD}>{label}</td>
                   <td style={TDC}>{max}</td>
                   <td style={TDS}>{fac.toFixed(1)}</td>
                   <td style={{ ...TDS_HOD, fontWeight: 700, color: "#312e81" }}>{hod.toFixed(1)}</td>
+                  <td style={{ ...TDS_DIR, fontWeight: 700, color: "#065f46" }}>{dir.toFixed(1)}</td>
                 </tr>
               ))}
               <tr style={{ background: "#d1fae5", fontWeight: 700 }}>
                 <td style={TD}>Grand Total</td>
                 <td style={TDC}>575</td>
                 <td style={TDS}>—</td>
-                <td style={{ ...TDS_HOD, color: "#065f46", fontSize: 14 }}>{total.toFixed(1)}</td>
+                <td style={{ ...TDS_HOD, color: "#312e81", fontSize: 14 }}>{total.toFixed(1)}</td>
+                <td style={{ ...TDS_DIR, color: "#065f46", fontSize: 14 }}>{dirTotal.toFixed(1)}</td>
               </tr>
               <tr style={{ background: g.bg }}>
-                <td style={TD} colSpan={3}><strong>Grade</strong></td>
+                <td style={TD} colSpan={4}><strong>Grade (based on Director Score)</strong></td>
                 <td style={{ ...TDC, color: g.color, fontWeight: 800 }}>{g.label}</td>
               </tr>
             </tbody>
           </table>
 
-          <label style={{ fontWeight: 700, fontSize: 13, color: "#334155", display: "block", marginBottom: 6 }}>HOD Remarks</label>
-          <textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4}
-            placeholder="Enter your remarks, observations, and recommendations for this faculty member..."
-            style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 7, padding: "10px 12px", fontSize: 12, fontFamily: "Georgia, serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16 }} />
+          {/* HOD Remarks — pre-filled, read-only */}
+          <label style={{ fontWeight: 700, fontSize: 13, color: "#312e81", display: "block", marginBottom: 6 }}>HOD Remarks <span style={{ fontWeight: 400, fontSize: 11, color: "#64748b" }}>(read-only)</span></label>
+          <div style={{ width: "100%", border: "1px solid #c7d2fe", borderRadius: 7, padding: "10px 12px", fontSize: 12, fontFamily: "Georgia, serif", background: "#f0f4ff", color: "#334155", marginBottom: 16, minHeight: 60, whiteSpace: "pre-wrap", boxSizing: "border-box" }}>
+            {hodRemarks || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No HOD remarks provided.</span>}
+          </div>
+
+          {/* Director Remarks — editable */}
+          <label style={{ fontWeight: 700, fontSize: 13, color: "#065f46", display: "block", marginBottom: 6 }}>Director Remarks</label>
+          <textarea value={dirRemarks} onChange={e => setDirRemarks(e.target.value)} rows={4}
+            placeholder="Enter your director remarks, observations, and recommendations..."
+            style={{ width: "100%", border: "1.5px solid #86efac", borderRadius: 7, padding: "10px 12px", fontSize: 12, fontFamily: "Georgia, serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16, background: "#f0fdf4", outline: "none" }} />
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <button onClick={onBack} style={{ padding: "9px 22px", background: "#f1f5f9", color: "#475569", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "Georgia, serif" }}>Cancel</button>
-            <button onClick={() => onSubmit(faculty.id, total, remarks)}
+            <button onClick={() => onSubmit(faculty.id, dirTotal || total, dirRemarks)}
               style={{ padding: "10px 28px", background: "#059669", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif" }}>
-              ✔ Submit HOD Review
+              ✔ Submit Director Review
             </button>
           </div>
         </div>

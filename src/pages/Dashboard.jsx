@@ -1386,7 +1386,7 @@ export default function HODDashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ background: "#fff", borderRadius: 9, padding: "16px 20px", boxShadow: "0 1px 3px rgba(0,0,0,.06)", marginBottom: 4 }}>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>My Appraisal Form</h2>
-              <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>{info.name || "HOD"} · {info.ay}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>{info.name || "Faculty"}.{info.ay}</p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
