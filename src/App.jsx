@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
 import FacultyProfile from "./pages/FacultyProfile";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleDashboard from "./pages/RoleDashboard";
@@ -98,6 +99,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/profile"

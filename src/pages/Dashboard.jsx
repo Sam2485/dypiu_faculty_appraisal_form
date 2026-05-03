@@ -31,6 +31,19 @@ const docsToRows = (docs, facultyEmail, academicYear) =>
       storage_path: file.publicId || null,
     }))
   );
+const dbText = (value) => {
+  const text = String(value ?? "").trim();
+  return text || null;
+};
+const dbDate = (value) => {
+  const text = String(value ?? "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
+};
+const dbNumber = (value) => {
+  const text = String(value ?? "").trim();
+  return text === "" ? null : n(text);
+};
+const inputValue = (value) => value ?? "";
 const pct = (v, m) => Math.min(100, Math.round((v / m) * 100)) || 0;
 const grade = (score, max) => {
   const p = (score / max) * 100;
@@ -1104,6 +1117,326 @@ export default function HODDashboard() {
     loadDocuments();
   }, [info.ay]);
 
+  useEffect(() => {
+    const loadExistingAppraisal = async () => {
+      const userEmail = localStorage.getItem("username");
+      if (!userEmail || !info.ay) return;
+
+      const fetchRows = async (table, shouldOrder = true) => {
+        let query = supabase
+          .from(table)
+          .select("*")
+          .eq("faculty_email", userEmail)
+          .eq("academic_year", info.ay);
+
+        if (shouldOrder) {
+          query = query.order("row_no", { ascending: true });
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw new Error(`${table}: ${error.message}`);
+        }
+
+        return data || [];
+      };
+
+      try {
+        const [
+          teachingRows,
+          courseRows,
+          innovativeRows,
+          projectRows,
+          qualificationRows,
+          feedbackRows,
+          departmentRows,
+          universityRows,
+          societyRows,
+          industryRows,
+          acrRows,
+          journalRows,
+          bookRows,
+          ictRows,
+          researchRows,
+          researchProjectRows,
+          patentRows,
+          awardRows,
+          conferenceRows,
+          proposalRows,
+          selfDevelopmentRows,
+          trainingRows,
+        ] = await Promise.all([
+          fetchRows("teaching_process"),
+          fetchRows("course_files"),
+          fetchRows("innovative_teaching", false),
+          fetchRows("projects_guided"),
+          fetchRows("qualification_enhancement"),
+          fetchRows("student_feedback"),
+          fetchRows("department_activities"),
+          fetchRows("university_activities"),
+          fetchRows("social_contributions"),
+          fetchRows("industry_connect"),
+          fetchRows("acr_scores"),
+          fetchRows("journal_publications"),
+          fetchRows("book_publications"),
+          fetchRows("ict_pedagogy"),
+          fetchRows("research_guidance"),
+          fetchRows("research_projects"),
+          fetchRows("patents"),
+          fetchRows("awards"),
+          fetchRows("conferences"),
+          fetchRows("research_proposals"),
+          fetchRows("self_development"),
+          fetchRows("industrial_training"),
+        ]);
+
+        if (teachingRows.length) {
+          setLectures(teachingRows.map((row) => ({
+            sem: inputValue(row.semester),
+            code: inputValue(row.course_code),
+            planned: inputValue(row.planned_classes),
+            conducted: inputValue(row.conducted_classes),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (courseRows.length) {
+          setCourseFile(courseRows.map((row) => ({
+            course: inputValue(row.course),
+            title: inputValue(row.title),
+            details: inputValue(row.details),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (innovativeRows.length) {
+          setInnovDetails(inputValue(innovativeRows[0].details));
+          setInnovScore(inputValue(innovativeRows[0].score));
+        }
+
+        if (projectRows.length) {
+          setProjects(projectRows.map((row) => ({
+            label: inputValue(row.label),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (qualificationRows.length) {
+          setQuals(qualificationRows.map((row) => ({
+            label: inputValue(row.label),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (feedbackRows.length) {
+          setFeedback(feedbackRows.map((row) => ({
+            code: inputValue(row.course_code),
+            fb1: inputValue(row.feedback_1),
+            fb2: inputValue(row.feedback_2),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (departmentRows.length) {
+          setDeptActs(departmentRows.map((row) => ({
+            activity: inputValue(row.activity),
+            nature: inputValue(row.nature),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (universityRows.length) {
+          setUniActs(universityRows.map((row) => ({
+            activity: inputValue(row.activity),
+            nature: inputValue(row.nature),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (societyRows.length) {
+          setSociety(societyRows.map((row) => ({
+            label: inputValue(row.label),
+            details: inputValue(row.details),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (industryRows.length) {
+          setIndustry(industryRows.map((row) => ({
+            name: inputValue(row.name),
+            details: inputValue(row.details),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (acrRows.length) {
+          setAcr(acrRows.map((row) => ({
+            label: inputValue(row.label),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (journalRows.length) {
+          setJournals(journalRows.map((row) => ({
+            title: inputValue(row.title),
+            journal: inputValue(row.journal),
+            issn: inputValue(row.issn),
+            index: inputValue(row.indexing),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (bookRows.length) {
+          setBooks(bookRows.map((row) => ({
+            title: inputValue(row.title),
+            book: inputValue(row.book),
+            issn: inputValue(row.issn),
+            pub: inputValue(row.publisher),
+            coauth: inputValue(row.coauthor),
+            first: inputValue(row.first_author),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (ictRows.length) {
+          setIct(ictRows.map((row) => ({
+            title: inputValue(row.title),
+            desc: inputValue(row.description),
+            type: inputValue(row.type),
+            quad: inputValue(row.quadrant),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (researchRows.length) {
+          setResearch(researchRows.map((row) => ({
+            degree: inputValue(row.degree),
+            name: inputValue(row.student_name),
+            thesis: inputValue(row.thesis),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (researchProjectRows.length) {
+          setProjects2(researchProjectRows.map((row) => ({
+            title: inputValue(row.title),
+            agency: inputValue(row.agency),
+            date: inputValue(row.sanction_date),
+            amount: inputValue(row.amount),
+            role: inputValue(row.role),
+            status: inputValue(row.project_status),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+          })));
+        }
+
+        if (patentRows.length) {
+          setPatents(patentRows.map((row) => ({
+            title: inputValue(row.title),
+            type: inputValue(row.type),
+            date: inputValue(row.patent_date),
+            status: inputValue(row.patent_status),
+            fileNo: inputValue(row.file_no),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (awardRows.length) {
+          setAwards(awardRows.map((row) => ({
+            title: inputValue(row.title),
+            date: inputValue(row.award_date),
+            agency: inputValue(row.agency),
+            level: inputValue(row.level),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (conferenceRows.length) {
+          setConfs(conferenceRows.map((row) => ({
+            title: inputValue(row.title),
+            type: inputValue(row.type),
+            org: inputValue(row.organization),
+            level: inputValue(row.level),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (proposalRows.length) {
+          setProposals(proposalRows.map((row) => ({
+            title: inputValue(row.title),
+            duration: inputValue(row.duration),
+            agency: inputValue(row.agency),
+            amount: inputValue(row.amount),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (selfDevelopmentRows.length) {
+          setFdps(selfDevelopmentRows.map((row) => ({
+            program: inputValue(row.program),
+            duration: inputValue(row.duration),
+            org: inputValue(row.organization),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+
+        if (trainingRows.length) {
+          setTraining(trainingRows.map((row) => ({
+            company: inputValue(row.company),
+            duration: inputValue(row.duration),
+            nature: inputValue(row.nature),
+            score: inputValue(row.score),
+            hod: inputValue(row.hod_score),
+            director: inputValue(row.director_score),
+          })));
+        }
+      } catch (err) {
+        console.error("Could not load saved appraisal:", err);
+      }
+    };
+
+    loadExistingAppraisal();
+  }, [info.ay]);
+
   // ── Computed scores for HOD appraisal ──
   const totalLecScore = lectures.reduce((a, r) => a + n(r.score), 0);
   const courseFileScore = courseFile.reduce((a, r) => a + n(r.score), 0);
@@ -1176,63 +1509,387 @@ export default function HODDashboard() {
         submitted_at: new Date().toISOString()
       };
 
-      // 3. Save to Supabase (using a few available tables as examples of persistence)
-      // Note: In a full implementation, we'd loop through all sections.
-      
       // Save Declaration
       const { error: declError } = await supabase
         .from('declarations')
         .upsert(declarationData, { onConflict: 'faculty_email,academic_year' });
       requireSupabase(declError, "Could not save declaration");
 
-      // Save Teaching Process (A1)
-      const teachingData = lectures
-        .filter((l) => hasAnyValue(l, ["sem", "code", "planned", "conducted", "score"]))
-        .map(l => ({
+      const baseRow = (index) => ({
         faculty_email: userEmail,
         academic_year: info.ay,
-        semester: l.sem,
-        course_code: l.code,
-        planned_classes: n(l.planned),
-        conducted_classes: n(l.conducted),
-        score: n(l.score)
-      }));
-      const { error: teachingDeleteError } = await supabase
-        .from('teaching_process')
+        row_no: index + 1,
+      });
+
+      const replaceRows = async (table, rows, label) => {
+        const { error: deleteError } = await supabase
+          .from(table)
+          .delete()
+          .match({ faculty_email: userEmail, academic_year: info.ay });
+        requireSupabase(deleteError, `Could not clear old ${label} rows`);
+
+        if (rows.length > 0) {
+          const { error: insertError } = await supabase.from(table).insert(rows);
+          requireSupabase(insertError, `Could not save ${label} rows`);
+        }
+      };
+
+      await replaceRows(
+        'teaching_process',
+        lectures
+          .filter((row) => hasAnyValue(row, ["sem", "code", "planned", "conducted", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            semester: dbText(row.sem),
+            course_code: dbText(row.code),
+            planned_classes: n(row.planned),
+            conducted_classes: n(row.conducted),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'teaching process'
+      );
+
+      await replaceRows(
+        'course_files',
+        courseFile
+          .filter((row) => hasAnyValue(row, ["course", "title", "details", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            course: dbText(row.course),
+            title: dbText(row.title),
+            details: dbText(row.details),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'course file'
+      );
+
+      const { error: innovativeDeleteError } = await supabase
+        .from('innovative_teaching')
         .delete()
         .match({ faculty_email: userEmail, academic_year: info.ay });
-      requireSupabase(teachingDeleteError, "Could not clear old teaching process rows");
+      requireSupabase(innovativeDeleteError, "Could not clear old innovative teaching row");
 
-      if (teachingData.length > 0) {
-        const { error: teachingInsertError } = await supabase
-          .from('teaching_process')
-          .insert(teachingData);
-        requireSupabase(teachingInsertError, "Could not save teaching process rows");
+      if (hasAnyValue({ details: innovDetails, score: innovScore }, ["details", "score"])) {
+        const { error: innovativeInsertError } = await supabase
+          .from('innovative_teaching')
+          .insert([{
+            faculty_email: userEmail,
+            academic_year: info.ay,
+            details: dbText(innovDetails),
+            score: n(innovScore),
+          }]);
+        requireSupabase(innovativeInsertError, "Could not save innovative teaching row");
       }
 
-      // Save Student Feedback (A6)
-      const feedbackData = feedback
-        .filter((f) => hasAnyValue(f, ["code", "fb1", "fb2", "score"]))
-        .map(f => ({
-        faculty_email: userEmail,
-        academic_year: info.ay,
-        course_code: f.code,
-        feedback_1: n(f.fb1),
-        feedback_2: n(f.fb2),
-        score: n(f.score)
-      }));
-      const { error: feedbackDeleteError } = await supabase
-        .from('student_feedback')
-        .delete()
-        .match({ faculty_email: userEmail, academic_year: info.ay });
-      requireSupabase(feedbackDeleteError, "Could not clear old student feedback rows");
+      await replaceRows(
+        'projects_guided',
+        projects
+          .filter((row) => hasAnyValue(row, ["label", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            label: dbText(row.label),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'projects'
+      );
 
-      if (feedbackData.length > 0) {
-        const { error: feedbackInsertError } = await supabase
-          .from('student_feedback')
-          .insert(feedbackData);
-        requireSupabase(feedbackInsertError, "Could not save student feedback rows");
-      }
+      await replaceRows(
+        'qualification_enhancement',
+        quals
+          .filter((row) => hasAnyValue(row, ["label", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            label: dbText(row.label),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'qualification enhancement'
+      );
+
+      await replaceRows(
+        'student_feedback',
+        feedback
+          .filter((row) => hasAnyValue(row, ["code", "fb1", "fb2", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            course_code: dbText(row.code),
+            feedback_1: n(row.fb1),
+            feedback_2: n(row.fb2),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'student feedback'
+      );
+
+      await replaceRows(
+        'department_activities',
+        deptActs
+          .filter((row) => hasAnyValue(row, ["activity", "nature", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            activity: dbText(row.activity),
+            nature: dbText(row.nature),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'department activities'
+      );
+
+      await replaceRows(
+        'university_activities',
+        uniActs
+          .filter((row) => hasAnyValue(row, ["activity", "nature", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            activity: dbText(row.activity),
+            nature: dbText(row.nature),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'university activities'
+      );
+
+      await replaceRows(
+        'social_contributions',
+        society
+          .filter((row) => hasAnyValue(row, ["label", "details", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            label: dbText(row.label),
+            details: dbText(row.details),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'social contribution'
+      );
+
+      await replaceRows(
+        'industry_connect',
+        industry
+          .filter((row) => hasAnyValue(row, ["name", "details", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            name: dbText(row.name),
+            details: dbText(row.details),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'industry connect'
+      );
+
+      await replaceRows(
+        'acr_scores',
+        acr
+          .filter((row) => hasAnyValue(row, ["label", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            label: dbText(row.label),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'ACR'
+      );
+
+      await replaceRows(
+        'journal_publications',
+        journals
+          .filter((row) => hasAnyValue(row, ["title", "journal", "issn", "index", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            journal: dbText(row.journal),
+            issn: dbText(row.issn),
+            indexing: dbText(row.index),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'journal publications'
+      );
+
+      await replaceRows(
+        'book_publications',
+        books
+          .filter((row) => hasAnyValue(row, ["title", "book", "issn", "pub", "coauth", "first", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            book: dbText(row.book),
+            issn: dbText(row.issn),
+            publisher: dbText(row.pub),
+            coauthor: dbText(row.coauth),
+            first_author: dbText(row.first),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'book publications'
+      );
+
+      await replaceRows(
+        'ict_pedagogy',
+        ict
+          .filter((row) => hasAnyValue(row, ["title", "desc", "type", "quad", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            description: dbText(row.desc),
+            type: dbText(row.type),
+            quadrant: dbText(row.quad),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'ICT pedagogy'
+      );
+
+      await replaceRows(
+        'research_guidance',
+        research
+          .filter((row) => hasAnyValue(row, ["degree", "name", "thesis", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            degree: dbText(row.degree),
+            student_name: dbText(row.name),
+            thesis: dbText(row.thesis),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'research guidance'
+      );
+
+      await replaceRows(
+        'research_projects',
+        projects2
+          .filter((row) => hasAnyValue(row, ["title", "agency", "date", "amount", "role", "status", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            agency: dbText(row.agency),
+            sanction_date: dbDate(row.date),
+            amount: dbNumber(row.amount),
+            role: dbText(row.role),
+            project_status: dbText(row.status),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+          })),
+        'research projects'
+      );
+
+      await replaceRows(
+        'patents',
+        patents
+          .filter((row) => hasAnyValue(row, ["title", "type", "date", "status", "fileNo", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            type: dbText(row.type),
+            patent_date: dbDate(row.date),
+            patent_status: dbText(row.status),
+            file_no: dbText(row.fileNo),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'patents'
+      );
+
+      await replaceRows(
+        'awards',
+        awards
+          .filter((row) => hasAnyValue(row, ["title", "date", "agency", "level", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            award_date: dbDate(row.date),
+            agency: dbText(row.agency),
+            level: dbText(row.level),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'awards'
+      );
+
+      await replaceRows(
+        'conferences',
+        confs
+          .filter((row) => hasAnyValue(row, ["title", "type", "org", "level", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            type: dbText(row.type),
+            organization: dbText(row.org),
+            level: dbText(row.level),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'conferences'
+      );
+
+      await replaceRows(
+        'research_proposals',
+        proposals
+          .filter((row) => hasAnyValue(row, ["title", "duration", "agency", "amount", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            title: dbText(row.title),
+            duration: dbText(row.duration),
+            agency: dbText(row.agency),
+            amount: dbNumber(row.amount),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'research proposals'
+      );
+
+      await replaceRows(
+        'self_development',
+        fdps
+          .filter((row) => hasAnyValue(row, ["program", "duration", "org", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            program: dbText(row.program),
+            duration: dbText(row.duration),
+            organization: dbText(row.org),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'self development'
+      );
+
+      await replaceRows(
+        'industrial_training',
+        training
+          .filter((row) => hasAnyValue(row, ["company", "duration", "nature", "score"]))
+          .map((row, index) => ({
+            ...baseRow(index),
+            company: dbText(row.company),
+            duration: dbText(row.duration),
+            nature: dbText(row.nature),
+            score: n(row.score),
+            hod_score: dbNumber(row.hod),
+            director_score: dbNumber(row.director),
+          })),
+        'industrial training'
+      );
 
       const documentRows = docsToRows(docs, userEmail, info.ay);
       const { error: documentDeleteError } = await supabase
@@ -2433,3 +3090,4 @@ export default function HODDashboard() {
     </div>
   );
 }
+

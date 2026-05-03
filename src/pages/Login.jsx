@@ -10,7 +10,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [error, setError]       = useState("");
+  const [message, setMessage]   = useState("");
   const [loading, setLoading]   = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -20,6 +22,7 @@ export default function Login() {
 
     setLoading(true);
     setError("");
+    setMessage("");
 
     try {
       // 1. Attempt Supabase Auth
@@ -82,6 +85,38 @@ export default function Login() {
     if (e.key === "Enter") handleLogin();
   };
 
+  const handleForgotPassword = async () => {
+    const email = username.trim();
+
+    if (!email) {
+      setError("Please enter your email above, then click Forgot password.");
+      setMessage("");
+      return;
+    }
+
+    setResetLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+
+      setMessage("Password reset link sent. Please check your email.");
+    } catch (err) {
+      console.error("Password reset error:", err);
+      setError("Unable to send reset link. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div style={s.wrap}>
       <div style={s.card}>
@@ -107,6 +142,7 @@ export default function Login() {
             <p style={s.sub}>Sign in to continue</p>
 
             {error && <div style={s.error}>{error}</div>}
+            {message && <div style={s.success}>{message}</div>}
 
             {/* Username */}
             <label style={s.label}>Username</label>
@@ -155,7 +191,14 @@ export default function Login() {
               )}
             </button>
 
-            <div style={s.forgot}>Forgot password?</div>
+            <button
+              type="button"
+              style={{ ...s.forgot, opacity: resetLoading ? 0.7 : 1 }}
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+            >
+              {resetLoading ? "Sending reset link..." : "Forgot password?"}
+            </button>
 
             <div style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "#94a3b8" }}>
               Don't have an account? <Link to="/signup" style={{ color: "#38bdf8", textDecoration: "none", fontWeight: 700 }}>Sign up</Link>
@@ -321,6 +364,11 @@ const s = {
     animation: "spin 1s linear infinite",
   },
   forgot: {
+    background: "none",
+    border: "none",
+    display: "block",
+    width: "100%",
+    fontFamily: "inherit",
     fontSize: 12,
     color: "#64748b",
     textAlign: "right",
@@ -332,6 +380,16 @@ const s = {
     background: "rgba(220,50,50,0.18)",
     border: "1px solid rgba(220,50,50,0.4)",
     color: "#fca5a5",
+    padding: "9px 12px",
+    borderRadius: 5,
+    fontSize: 12,
+    marginBottom: 14,
+    lineHeight: 1.5,
+  },
+  success: {
+    background: "rgba(34,197,94,0.14)",
+    border: "1px solid rgba(34,197,94,0.35)",
+    color: "#86efac",
     padding: "9px 12px",
     borderRadius: 5,
     fontSize: 12,
