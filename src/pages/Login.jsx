@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { SCHOOL_CONFIG, APP_INFO } from "../constants/formConfig";
+import { APP_INFO } from "../constants/formConfig";
 import { CREDENTIALS } from "../data/mockData";
 import { supabase } from "../services/supabase";
+import { normalizeRole, storeUserSession } from "../auth/session";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,51 +26,88 @@ export default function Login() {
     setMessage("");
 
     try {
+      const email = username.trim().toLowerCase();
+
       // 1. Attempt Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: username.trim(),
+        email,
         password: password,
       });
 
       if (!authError && data?.user) {
         console.log("Supabase login successful:", data.user);
-        
-        // You might want to fetch the user's role from a 'profiles' table here.
-        // For now, we'll try to match with mock data or default to faculty.
-        const mockCred = CREDENTIALS[username.trim().toLowerCase()] || { role: "faculty" };
-        
-        localStorage.setItem("supabaseToken", data.session.access_token);
-        localStorage.setItem("role", mockCred.role);
-        localStorage.setItem("username", username.trim().toLowerCase());
-        localStorage.setItem("name", mockCred.name || username.trim());
-        
-        const school = mockCred.school || "";
-        const dept = mockCred.department || "";
-        const hasHod = school ? (SCHOOL_CONFIG[school]?.hasHod !== false) : true;
-        localStorage.setItem("school", school);
-        localStorage.setItem("department", dept);
-        localStorage.setItem("hasHod", hasHod ? "true" : "false");
 
-        navigate("/profile");
+        const { data: profile, error: profileError } = await supabase
+          .from("faculty_profiles")
+          .select("*")
+          .eq("email", data.user.email || email)
+          .maybeSingle();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        let activeProfile = profile;
+
+        if (!activeProfile) {
+          const metadata = data.user.user_metadata || {};
+          const fallbackProfile = {
+            email: data.user.email || email,
+            employee_id: metadata.employeeId || metadata.employee_id || null,
+            full_name: metadata.name || metadata.full_name || data.user.email || email,
+            qualification: metadata.qualification || null,
+            designation: metadata.designation || null,
+            department: metadata.department || null,
+            school: metadata.school || null,
+            teaching_experience: metadata.experience || metadata.teaching_experience || null,
+            phone: metadata.phone || null,
+            academic_year: APP_INFO.DEFAULT_AY,
+            appraisal_role: normalizeRole(metadata.role),
+          };
+
+          const { data: createdProfile, error: createProfileError } = await supabase
+            .from("faculty_profiles")
+            .upsert(fallbackProfile, { onConflict: "email" })
+            .select()
+            .single();
+
+          if (createProfileError) {
+            console.warn("Could not create missing faculty profile:", createProfileError.message);
+          } else {
+            activeProfile = createdProfile;
+          }
+        }
+
+        storeUserSession({
+          session: data.session,
+          user: data.user,
+          profile: activeProfile,
+          fallbackEmail: email,
+        });
+
+        navigate("/dashboard", { replace: true });
         return;
       }
 
       // 2. Fallback to Mock Data (useful during development/migration)
       console.warn("Supabase auth failed, trying mock fallback...", authError?.message);
-      const cred = CREDENTIALS[username.trim().toLowerCase()];
+      const cred = CREDENTIALS[email];
 
       if (cred && cred.password === password) {
-        localStorage.setItem("role", cred.role);
-        localStorage.setItem("username", username.trim().toLowerCase());
-        localStorage.setItem("name", cred.name || username.trim());
-        const school = cred.school || "";
-        const dept = cred.department || "";
-        const hasHod = school ? (SCHOOL_CONFIG[school]?.hasHod !== false) : true;
-        localStorage.setItem("school", school);
-        localStorage.setItem("department", dept);
-        localStorage.setItem("hasHod", hasHod ? "true" : "false");
+        storeUserSession({
+          profile: {
+            email,
+            full_name: cred.name || email,
+            appraisal_role: cred.role,
+            school: cred.school,
+            department: cred.department,
+            designation: cred.designation,
+            employee_id: cred.employeeId,
+          },
+          fallbackEmail: email,
+        });
 
-        navigate("/profile");
+        navigate("/dashboard", { replace: true });
       } else {
         setError(authError?.message || "Invalid credentials. Please try again.");
       }

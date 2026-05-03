@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { getStaffForDirector } from "../services/api";
 import { SOCIETY_LABELS, ACR_LABELS, MAX_SCORES, APP_INFO, SCHOOL_CONFIG } from "../constants/formConfig";
 import { DIRECTOR_USER, HOD_LIST, FACULTY_LIST, DIRECTOR_SELF_DATA } from "../data/mockData";
-import { supabase } from "../services/supabase";
+import { loadAppraisalDocuments, loadSavedAppraisal, saveAppraisal } from "../services/appraisalPersistence";
+import { uploadToCloudinary } from "../services/cloudinary";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const n = (v) => parseFloat(v) || 0;
@@ -78,13 +79,25 @@ function TI({ val, onChange, center, placeholder }) {
 
 function DocCell({ id, docs, setDocs }) {
   const ref = useRef();
-  const handleFiles = (files) => {
-    const newFiles = Array.from(files).map((f) => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
-      type: f.type,
-    }));
-    setDocs((p) => ({ ...p, [id]: [...(p[id] || []), ...newFiles] }));
+  const [uploading, setUploading] = useState(false);
+  const handleFiles = async (files) => {
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
+    setUploading(true);
+    try {
+      const uploadedFiles = [];
+      for (const file of selectedFiles) {
+        uploadedFiles.push(await uploadToCloudinary(file, { folder: `faculty-appraisal/${id}` }));
+      }
+      setDocs((p) => ({ ...p, [id]: [...(p[id] || []), ...uploadedFiles] }));
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
+      alert(`Unable to upload file.\n\n${err.message}`);
+    } finally {
+      setUploading(false);
+      if (ref.current) ref.current.value = "";
+    }
   };
   const removeFile = (idx) => {
     setDocs((p) => {
@@ -1121,6 +1134,56 @@ export default function DirectorDashboard() {
 
   const [docs, setDocs] = useState({});
 
+  useEffect(() => {
+    const userEmail = localStorage.getItem("username");
+    if (!userEmail || !info.ay) return;
+
+    const loadOwnAppraisal = async () => {
+      try {
+        await Promise.all([
+          loadSavedAppraisal({
+            facultyEmail: userEmail,
+            academicYear: info.ay,
+            setters: {
+              setLectures,
+              setCourseFile,
+              setInnovDetails,
+              setInnovScore,
+              setProjects,
+              setQuals,
+              setFeedback,
+              setDeptActs,
+              setUniActs,
+              setSociety,
+              setIndustry,
+              setAcr,
+              setJournals,
+              setBooks,
+              setIct,
+              setResearch,
+              setProjects2,
+              setPatents,
+              setAwards,
+              setConfs,
+              setProposals,
+              setFdps,
+              setTraining,
+            },
+          }),
+          loadAppraisalDocuments({
+            facultyEmail: userEmail,
+            academicYear: info.ay,
+            setDocs,
+          }),
+        ]);
+      } catch (err) {
+        console.error("Could not load saved director appraisal:", err);
+      }
+    };
+
+    loadOwnAppraisal();
+  }, [info.ay]);
+
   // ── Computed scores for HOD appraisal ──
   const totalLecScore = lectures.reduce((a, r) => a + n(r.score), 0);
   const courseFileScore = courseFile.reduce((a, r) => a + n(r.score), 0);
@@ -1173,10 +1236,16 @@ export default function DirectorDashboard() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmitAppraisal = async () => {
-    // 1. Basic Validation
     if (!info.name || !info.ay) {
       alert("Please fill in basic faculty information (Name, Academic Year).");
       setHodAppraisalTab("partA");
+      return;
+    }
+
+    const userEmail = localStorage.getItem("username");
+    if (!userEmail) {
+      alert("Please login again before submitting. Your email was not found in this session.");
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -1185,40 +1254,42 @@ export default function DirectorDashboard() {
 
     setSubmitting(true);
     try {
-      const userEmail = localStorage.getItem("username");
-      
-      const declarationData = {
-        faculty_email: userEmail,
-        academic_year: info.ay,
-        part_a_total: partATotal,
-        part_b_total: partBTotal,
-        grand_total: grandTotal,
-        status: "Pending Review",
-        submitted_at: new Date().toISOString()
-      };
-
-      const { error: declError } = await supabase
-        .from('declarations')
-        .upsert(declarationData, { onConflict: 'faculty_email,academic_year' });
-
-      if (declError) console.error("Error saving declaration:", declError.message);
-
-      // Save Teaching Process (A1)
-      const teachingData = lectures.map(l => ({
-        faculty_email: userEmail,
-        semester: l.sem,
-        course_code: l.code,
-        planned_classes: n(l.planned),
-        conducted_classes: n(l.conducted),
-        score: n(l.score)
-      }));
-      await supabase.from('teaching_process').delete().match({ faculty_email: userEmail });
-      await supabase.from('teaching_process').insert(teachingData);
+      await saveAppraisal({
+        facultyEmail: userEmail,
+        academicYear: info.ay,
+        totals: { partATotal, partBTotal, grandTotal },
+        form: {
+          lectures,
+          courseFile,
+          innovDetails,
+          innovScore,
+          projects,
+          quals,
+          feedback,
+          deptActs,
+          uniActs,
+          society,
+          industry,
+          acr,
+          journals,
+          books,
+          ict,
+          research,
+          projects2,
+          patents,
+          awards,
+          confs,
+          proposals,
+          fdps,
+          training,
+        },
+        docs,
+      });
 
       alert("Appraisal submitted successfully!");
     } catch (err) {
       console.error("Submission error:", err);
-      alert("An error occurred while submitting your appraisal. Please check your connection and try again.");
+      alert(`Unable to submit appraisal.\n\n${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -1311,12 +1382,14 @@ export default function DirectorDashboard() {
     <h3>A2: Course File</h3>
     <table>
       <tr><th>Course</th><th>Title</th><th>Details</th><th>Score</th></tr>
-      <tr>
-        <td>${courseFile.course || "&nbsp;"}</td>
-        <td>${courseFile.title || "&nbsp;"}</td>
-        <td>${courseFile.details || "&nbsp;"}</td>
-        <td class="center">${courseFile.score || "&nbsp;"}</td>
-      </tr>
+      ${courseFile.map(c => `
+        <tr>
+          <td>${c.course || "&nbsp;"}</td>
+          <td>${c.title || "&nbsp;"}</td>
+          <td>${c.details || "&nbsp;"}</td>
+          <td class="center">${c.score || "&nbsp;"}</td>
+        </tr>
+      `).join('')}
     </table>
 
     <!-- A3 -->
@@ -1389,7 +1462,7 @@ export default function DirectorDashboard() {
     <h3>G: ACR (Performance Indicators)</h3>
     <table>
       <tr><th>Criteria</th><th>Score</th></tr>
-      ${acr.map(a => `<tr><td>${a.label}</td><td class="center">${a.hod || "&nbsp;"}</td></tr>`).join('')}
+      ${acr.map(a => `<tr><td>${a.label}</td><td class="center">${a.score || "&nbsp;"}</td></tr>`).join('')}
     </table>
 
     <p class="total">Part A Total: ${partATotal}</p>

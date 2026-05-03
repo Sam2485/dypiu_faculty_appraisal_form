@@ -4,7 +4,8 @@ import { SOCIETY_LABELS, ACR_LABELS, MAX_SCORES, APP_INFO } from "../constants/f
 import { HodInput } from "../components/Inputs";
 import { DEAN_USER } from "../data/mockData";
 import { getStaffForDean } from "../services/api";
-import { supabase } from "../services/supabase";
+import { loadAppraisalDocuments, loadSavedAppraisal, saveAppraisal } from "../services/appraisalPersistence";
+import { uploadToCloudinary } from "../services/cloudinary";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const n = (v) => parseFloat(v) || 0;
@@ -84,13 +85,25 @@ function TI({ val, onChange, center, placeholder }) {
 
 function DocCell({ id, docs, setDocs }) {
   const ref = useRef();
-  const handleFiles = (files) => {
-    const newFiles = Array.from(files).map((f) => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
-      type: f.type,
-    }));
-    setDocs((p) => ({ ...p, [id]: [...(p[id] || []), ...newFiles] }));
+  const [uploading, setUploading] = useState(false);
+  const handleFiles = async (files) => {
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
+    setUploading(true);
+    try {
+      const uploadedFiles = [];
+      for (const file of selectedFiles) {
+        uploadedFiles.push(await uploadToCloudinary(file, { folder: `faculty-appraisal/${id}` }));
+      }
+      setDocs((p) => ({ ...p, [id]: [...(p[id] || []), ...uploadedFiles] }));
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
+      alert(`Unable to upload file.\n\n${err.message}`);
+    } finally {
+      setUploading(false);
+      if (ref.current) ref.current.value = "";
+    }
   };
   const removeFile = (idx) => {
     setDocs((p) => {
@@ -1069,6 +1082,56 @@ export default function DeanDashboard() {
 
   const [docs, setDocs] = useState({});
 
+  useEffect(() => {
+    const userEmail = localStorage.getItem("username");
+    if (!userEmail || !info.ay) return;
+
+    const loadOwnAppraisal = async () => {
+      try {
+        await Promise.all([
+          loadSavedAppraisal({
+            facultyEmail: userEmail,
+            academicYear: info.ay,
+            setters: {
+              setLectures,
+              setCourseFile,
+              setInnovDetails,
+              setInnovScore,
+              setProjects,
+              setQuals,
+              setFeedback,
+              setDeptActs,
+              setUniActs,
+              setSociety,
+              setIndustry,
+              setAcr,
+              setJournals,
+              setBooks,
+              setIct,
+              setResearch,
+              setProjects2,
+              setPatents,
+              setAwards,
+              setConfs,
+              setProposals,
+              setFdps,
+              setTraining,
+            },
+          }),
+          loadAppraisalDocuments({
+            facultyEmail: userEmail,
+            academicYear: info.ay,
+            setDocs,
+          }),
+        ]);
+      } catch (err) {
+        console.error("Could not load saved dean appraisal:", err);
+      }
+    };
+
+    loadOwnAppraisal();
+  }, [info.ay]);
+
   // ── Computed scores for HOD appraisal ──
   const totalLecScore = lectures.reduce((a, r) => a + n(r.score), 0);
   const courseFileScore = courseFile.reduce((a, r) => a + n(r.score), 0);
@@ -1228,12 +1291,14 @@ export default function DeanDashboard() {
     <h3>A2: Course File</h3>
     <table>
       <tr><th>Course</th><th>Title</th><th>Details</th><th>Score</th></tr>
-      <tr>
-        <td>${courseFile.course || "&nbsp;"}</td>
-        <td>${courseFile.title || "&nbsp;"}</td>
-        <td>${courseFile.details || "&nbsp;"}</td>
-        <td class="center">${courseFile.score || "&nbsp;"}</td>
-      </tr>
+      ${courseFile.map(c => `
+        <tr>
+          <td>${c.course || "&nbsp;"}</td>
+          <td>${c.title || "&nbsp;"}</td>
+          <td>${c.details || "&nbsp;"}</td>
+          <td class="center">${c.score || "&nbsp;"}</td>
+        </tr>
+      `).join('')}
     </table>
 
     <!-- A3 -->
@@ -1306,7 +1371,7 @@ export default function DeanDashboard() {
     <h3>G: ACR (Performance Indicators)</h3>
     <table>
       <tr><th>Criteria</th><th>Score</th></tr>
-      ${acr.map(a => `<tr><td>${a.label}</td><td class="center">${a.hod || "&nbsp;"}</td></tr>`).join('')}
+      ${acr.map(a => `<tr><td>${a.label}</td><td class="center">${a.score || "&nbsp;"}</td></tr>`).join('')}
     </table>
 
     <p class="total">Part A Total: ${partATotal}</p>
@@ -1394,6 +1459,68 @@ export default function DeanDashboard() {
   win.document.close();
   win.print();
 };
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitAppraisal = async () => {
+    if (!info.name || !info.ay) {
+      alert("Please fill in basic faculty information (Name, Academic Year).");
+      setHodAppraisalTab("partA");
+      return;
+    }
+
+    const userEmail = localStorage.getItem("username");
+    if (!userEmail) {
+      alert("Please login again before submitting. Your email was not found in this session.");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    const confirmSubmit = window.confirm("Are you sure you want to submit your appraisal? This will save your data to the database.");
+    if (!confirmSubmit) return;
+
+    setSubmitting(true);
+    try {
+      await saveAppraisal({
+        facultyEmail: userEmail,
+        academicYear: info.ay,
+        totals: { partATotal, partBTotal, grandTotal },
+        form: {
+          lectures,
+          courseFile,
+          innovDetails,
+          innovScore,
+          projects,
+          quals,
+          feedback,
+          deptActs,
+          uniActs,
+          society,
+          industry,
+          acr,
+          journals,
+          books,
+          ict,
+          research,
+          projects2,
+          patents,
+          awards,
+          confs,
+          proposals,
+          fdps,
+          training,
+        },
+        docs,
+      });
+
+      alert("Appraisal submitted successfully!");
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert(`Unable to submit appraisal.\n\n${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleSubmitReview = (id, remarks) => {
     const newStatus = "Dean Reviewed";
@@ -2248,8 +2375,12 @@ export default function DeanDashboard() {
                   <button onClick={generateReport} style={{ padding: "10px 24px", background: "#e2e8f0", color: "#475569", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif" }}>
                     Generate Report
                   </button>
-                  <button style={{ padding: "10px 28px", background: "#059669", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif" }}>
-                    ✔ Submit Appraisal
+                  <button
+                    onClick={handleSubmitAppraisal}
+                    disabled={submitting}
+                    style={{ padding: "10px 28px", background: "#059669", color: "#fff", border: "none", borderRadius: 7, cursor: submitting ? "wait" : "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif", opacity: submitting ? 0.7 : 1 }}
+                  >
+                    {submitting ? "Submitting..." : "✔ Submit Appraisal"}
                   </button>
                 </div>
               </SC>

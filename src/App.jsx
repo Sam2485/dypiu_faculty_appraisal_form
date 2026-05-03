@@ -6,6 +6,7 @@ import FacultyProfile from "./pages/FacultyProfile";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleDashboard from "./pages/RoleDashboard";
 import { useNavigate } from "react-router-dom";
+import { normalizeRole } from "./auth/session";
 
 // ─── Mock users (replace with API later) ─────────────────────────────────────
 const MOCK_USERS = {
@@ -59,7 +60,7 @@ const MOCK_USERS = {
 // ─── Profile Loader ───────────────────────────────────────────────────────────
 function ProfileLoader() {
   const navigate = useNavigate();
-  const role = (localStorage.getItem("role") || "faculty").toLowerCase();
+  const role = normalizeRole(localStorage.getItem("role"), "faculty");
   const name = localStorage.getItem("name") || "";
   const dept = localStorage.getItem("department") || "";
   const school = localStorage.getItem("school") || "";
@@ -120,6 +121,13 @@ export default function App() {
         />
 
         <Route path="/hod-dashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dean-dashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/director-dashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/vc-dashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/hoddashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/deandashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/directordashboard" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/vcdashboard" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="*" element={<Navigate to="/login" />} />

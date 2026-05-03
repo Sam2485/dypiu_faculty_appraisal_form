@@ -1,12 +1,13 @@
 import { Navigate } from "react-router-dom";
+import { normalizeRole, VALID_ROLES } from "./session";
 
 export default function ProtectedRoute({ children }) {
-  const role = localStorage.getItem("role");
-  const validRoles = ["faculty", "hod", "dean", "director", "vc"];
+  const role = normalizeRole(localStorage.getItem("role"), "");
 
-  if (!role || !validRoles.includes(role)) {
+  if (!VALID_ROLES.includes(role)) {
     return <Navigate to="/login" replace />;
   }
 
+  localStorage.setItem("role", role);
   return children;
 }

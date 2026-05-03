@@ -5,10 +5,13 @@ import DeanDashboard from "./DeanDashboard";
 import DirectorDashboard from "./DirectorDashboard";
 import VCDashboard from "./VCDashboard";
 import { SCHOOL_CONFIG } from "../constants/formConfig";
+import { normalizeRole } from "../auth/session";
 
 export default function RoleDashboard() {
-  const role = (localStorage.getItem("role") || "").toLowerCase();
+  const role = normalizeRole(localStorage.getItem("role"), "");
   const school = localStorage.getItem("school") || "";
+
+  localStorage.setItem("role", role);
 
   switch (role) {
     case "faculty":

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { SCHOOL_CONFIG, APP_INFO } from "../constants/formConfig";
+import { APP_INFO } from "../constants/formConfig";
 import { supabase } from "../services/supabase";
+import { buildProfilePayload, storeUserSession } from "../auth/session";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -56,21 +57,21 @@ export default function Signup() {
 
       if (authError) throw authError;
 
-      // Update localStorage so the Profile page can load dynamic info
-      localStorage.setItem("supabaseToken", data?.session?.access_token || "dummy_token");
-      localStorage.setItem("role", formData.role);
-      localStorage.setItem("username", formData.email.trim().toLowerCase());
-      localStorage.setItem("name", formData.name);
-      localStorage.setItem("department", formData.department);
-      localStorage.setItem("school", formData.school);
-      localStorage.setItem("employeeId", formData.employeeId);
-      localStorage.setItem("designation", formData.designation);
-      localStorage.setItem("qualification", formData.qualification);
-      localStorage.setItem("experience", formData.experience);
-      localStorage.setItem("phone", formData.phone);
-      
-      const hasHod = formData.school ? (SCHOOL_CONFIG[formData.school]?.hasHod !== false) : true;
-      localStorage.setItem("hasHod", hasHod ? "true" : "false");
+      const profilePayload = buildProfilePayload(formData, APP_INFO.DEFAULT_AY);
+      const { data: profile, error: profileError } = await supabase
+        .from("faculty_profiles")
+        .upsert(profilePayload, { onConflict: "email" })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      storeUserSession({
+        session: data?.session,
+        user: data?.user,
+        profile,
+        fallbackEmail: formData.email,
+      });
 
       navigate("/profile");
 
