@@ -38,11 +38,11 @@ export const VC_USER = {
 };
 
 export const CREDENTIALS = {
-  faculty: { password: "f1", role: "faculty",  school: "School of Engineering", department: "Computer Science & Engineering" },
-  hod:     { password: "hod1", role: "hod",      school: "School of Engineering", department: "Computer Science & Engineering" },
-  dean:    { password: "dean1", role: "dean",      school: "School of Engineering", department: "Engineering" },
-  director:{ password: "dir1", role: "director",  school: "School of Engineering", department: "Administration" },
-  vc:      { password: "vc1", role: "vc",        school: "University", department: "Management" },
+  faculty: { name: "Dr. Priya Sharma", password: "f1", role: "faculty",  school: "School of Engineering", department: "Computer Science & Engineering" },
+  hod:     { name: "Prof. Rajesh Kulkarni", password: "hod1", role: "hod",      school: "School of Engineering", department: "Computer Science & Engineering" },
+  dean:    { name: "Prof. Suresh Patil", password: "dean1", role: "dean",      school: "School of Engineering", department: "Engineering" },
+  director:{ name: "Dr. Mehta", password: "dir1", role: "director",  school: "School of Engineering", department: "Administration" },
+  vc:      { name: "Prof. Anil Deshmukh", password: "vc1", role: "vc",        school: "University", department: "Management" },
 };
 
 export const FACULTY_LIST = [

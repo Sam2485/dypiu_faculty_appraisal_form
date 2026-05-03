@@ -795,9 +795,9 @@ export default function VCDashboard() {
         <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
         
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px" }}>
-          <Avatar initials={VC_USER.avatar} color="#b45309" size={38} />
+          <Avatar initials={(localStorage.getItem("name") || "U").split(" ").map(n => n[0]).join("").toUpperCase()} color="#b45309" size={38} />
           <div>
-            <div style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{VC_USER.name}</div>
+            <div style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{localStorage.getItem("name") || "Vice Chancellor"}</div>
             <div style={{ color: "#64748b", fontSize: 10 }}>VC · {APP_INFO.SHORT_NAME}</div>
           </div>
         </div>

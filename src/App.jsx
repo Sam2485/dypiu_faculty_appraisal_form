@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import FacultyProfile from "./pages/FacultyProfile";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleDashboard from "./pages/RoleDashboard";
@@ -58,7 +59,29 @@ const MOCK_USERS = {
 function ProfileLoader() {
   const navigate = useNavigate();
   const role = (localStorage.getItem("role") || "faculty").toLowerCase();
-  const user = MOCK_USERS[role] || MOCK_USERS.faculty;
+  const name = localStorage.getItem("name") || "";
+  const dept = localStorage.getItem("department") || "";
+  const school = localStorage.getItem("school") || "";
+  const empId = localStorage.getItem("employeeId") || "";
+  const desig = localStorage.getItem("designation") || "";
+  const qual = localStorage.getItem("qualification") || "";
+  const exp = localStorage.getItem("experience") || "";
+  const phone = localStorage.getItem("phone") || "";
+
+  const baseUser = MOCK_USERS[role] || MOCK_USERS.faculty;
+  const user = {
+    ...baseUser,
+    name: name || baseUser.name,
+    department: dept || baseUser.department,
+    school: school || baseUser.school,
+    employeeId: empId || baseUser.employeeId,
+    designation: desig || baseUser.designation,
+    qualification: qual || (role === "faculty" ? "M.Tech, PhD" : "PhD"),
+    experience: exp || "10 Years",
+    phone: phone || "+91 98765 43210",
+    avatar: (name || baseUser.name).split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase(),
+    ay: "2025-2026",
+  };
 
   return (
     <FacultyProfile
@@ -74,6 +97,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
         <Route
           path="/profile"

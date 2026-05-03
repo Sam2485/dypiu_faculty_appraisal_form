@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { APP_INFO } from "../constants/formConfig";
 import { HOD_USER, FACULTY_LIST } from "../data/mockData";
 import { getFacultyForHOD } from "../services/api";
+import { supabase } from "../services/supabase";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const n = (v) => parseFloat(v) || 0;
@@ -890,7 +891,12 @@ export default function HODDashboard() {
 
 
   // ── HOD's own appraisal form state ──
-  const [info, setInfo] = useState({ name: HOD_USER.name, qual: "", desig: HOD_USER.designation, ay: HOD_USER.ay });
+  const [info, setInfo] = useState({ 
+    name: localStorage.getItem("name") || "", 
+    qual: "", 
+    desig: localStorage.getItem("role") === "hod" ? "Professor & Head" : "", 
+    ay: "2025-2026" 
+  });
   const inf = (k) => (v) => setInfo((p) => ({ ...p, [k]: v }));
 
   const [lectures, setLectures] = useState([
@@ -1025,7 +1031,7 @@ export default function HODDashboard() {
 
   // ── Computed scores for HOD appraisal ──
   const totalLecScore = lectures.reduce((a, r) => a + n(r.score), 0);
-  const courseFileScore = n(courseFile.score);
+  const courseFileScore = courseFile.reduce((a, r) => a + n(r.score), 0);
   const innovTotal = n(innovScore);
   const projectTotal = projects.reduce((a, r) => a + n(r.score), 0);
   const qualTotal = quals.reduce((a, r) => a + n(r.score), 0);
@@ -1035,7 +1041,7 @@ export default function HODDashboard() {
   const uniScore = uniActs.reduce((a, r) => a + n(r.score), 0);
   const societyScore = society.reduce((a, r) => a + n(r.score), 0);
   const industryScore = industry.reduce((a, r) => a + n(r.score), 0);
-  const acrScore = acr.reduce((a, r) => a + n(r.hod), 0);
+  const acrScore = acr.reduce((a, r) => a + n(r.score), 0);
   const partATotal = Math.min(200, teachingRaw + stuFeedbackScore + deptScore + uniScore + societyScore + industryScore + acrScore);
 
   const journalScore = journals.reduce((a, r) => a + n(r.score), 0);
@@ -1069,6 +1075,60 @@ export default function HODDashboard() {
     { id: "myAppraisal", icon: "👤", label: "My Appraisal", sub: "View your self-appraisal form" },
     { id: "approvals", icon: "📋", label: "Pending Approvals", sub: `${pendingCount} awaiting review`, badge: pendingCount },
   ];
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitAppraisal = async () => {
+    // 1. Basic Validation
+    if (!info.name || !info.ay) {
+      alert("Please fill in basic faculty information (Name, Academic Year).");
+      setHodAppraisalTab("partA");
+      return;
+    }
+
+    const confirmSubmit = window.confirm("Are you sure you want to submit your appraisal? This will save your data to the database.");
+    if (!confirmSubmit) return;
+
+    setSubmitting(true);
+    try {
+      const userEmail = localStorage.getItem("username");
+      
+      const declarationData = {
+        faculty_email: userEmail,
+        academic_year: info.ay,
+        part_a_total: partATotal,
+        part_b_total: partBTotal,
+        grand_total: grandTotal,
+        status: "Pending Review",
+        submitted_at: new Date().toISOString()
+      };
+
+      const { error: declError } = await supabase
+        .from('declarations')
+        .upsert(declarationData, { onConflict: 'faculty_email,academic_year' });
+
+      if (declError) console.error("Error saving declaration:", declError.message);
+
+      // Save Teaching Process (A1)
+      const teachingData = lectures.map(l => ({
+        faculty_email: userEmail,
+        semester: l.sem,
+        course_code: l.code,
+        planned_classes: n(l.planned),
+        conducted_classes: n(l.conducted),
+        score: n(l.score)
+      }));
+      await supabase.from('teaching_process').delete().match({ faculty_email: userEmail });
+      await supabase.from('teaching_process').insert(teachingData);
+
+      alert("Appraisal submitted successfully!");
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("An error occurred while submitting your appraisal. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const generateReport = () => {
   const win = window.open('', '_blank');
 
@@ -1378,10 +1438,10 @@ export default function HODDashboard() {
         <div style={{ flex: 1 }} />
         <div style={{ height: 1, background: "#1e293b" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar initials={HOD_USER.avatar} color="#6366f1" size={34} />
+          <Avatar initials={(localStorage.getItem("name") || "U").split(" ").map(n => n[0]).join("").toUpperCase()} color="#6366f1" size={34} />
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 700 }}>{HOD_USER.name.split(" ").slice(0, 2).join(" ")}</div>
-            <div style={{ color: "#475569", fontSize: 9 }}>HOD · {HOD_USER.department.split(" ")[0]}</div>
+            <div style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 700 }}>{(localStorage.getItem("name") || "User").split(" ").slice(0, 2).join(" ")}</div>
+            <div style={{ color: "#475569", fontSize: 9 }}>HOD · {localStorage.getItem("department")?.split(" ")[0] || ""}</div>
           </div>
         </div>
         <button
@@ -2167,8 +2227,12 @@ export default function HODDashboard() {
                   <button onClick={generateReport} style={{ padding: "10px 24px", background: "#e2e8f0", color: "#475569", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif" }}>
                     Generate Report
                   </button>
-                  <button style={{ padding: "10px 28px", background: "#059669", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif" }}>
-                    ✔ Submit Appraisal
+                  <button 
+                    onClick={handleSubmitAppraisal}
+                    disabled={submitting}
+                    style={{ padding: "10px 28px", background: "#059669", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "Georgia, serif", opacity: submitting ? 0.7 : 1 }}
+                  >
+                    {submitting ? "Submitting..." : "✔ Submit Appraisal"}
                   </button>
                 </div>
               </SC>

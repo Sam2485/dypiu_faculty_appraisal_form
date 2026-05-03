@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { SCHOOL_CONFIG, APP_INFO } from "../constants/formConfig";
 import { CREDENTIALS } from "../data/mockData";
 import { supabase } from "../services/supabase";
@@ -38,6 +38,7 @@ export default function Login() {
         localStorage.setItem("supabaseToken", data.session.access_token);
         localStorage.setItem("role", mockCred.role);
         localStorage.setItem("username", username.trim().toLowerCase());
+        localStorage.setItem("name", mockCred.name || username.trim());
         
         const school = mockCred.school || "";
         const dept = mockCred.department || "";
@@ -57,6 +58,7 @@ export default function Login() {
       if (cred && cred.password === password) {
         localStorage.setItem("role", cred.role);
         localStorage.setItem("username", username.trim().toLowerCase());
+        localStorage.setItem("name", cred.name || username.trim());
         const school = cred.school || "";
         const dept = cred.department || "";
         const hasHod = school ? (SCHOOL_CONFIG[school]?.hasHod !== false) : true;
@@ -154,6 +156,10 @@ export default function Login() {
             </button>
 
             <div style={s.forgot}>Forgot password?</div>
+
+            <div style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "#94a3b8" }}>
+              Don't have an account? <Link to="/signup" style={{ color: "#38bdf8", textDecoration: "none", fontWeight: 700 }}>Sign up</Link>
+            </div>
 
           </div>
         </div>

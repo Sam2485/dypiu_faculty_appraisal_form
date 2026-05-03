@@ -4,6 +4,7 @@ import { SOCIETY_LABELS, ACR_LABELS, MAX_SCORES, APP_INFO } from "../constants/f
 import { HodInput } from "../components/Inputs";
 import { DEAN_USER } from "../data/mockData";
 import { getStaffForDean } from "../services/api";
+import { supabase } from "../services/supabase";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const n = (v) => parseFloat(v) || 0;
@@ -930,7 +931,12 @@ export default function DeanDashboard() {
 
 
   // ── Dean's own appraisal form state ──
-  const [info, setInfo] = useState({ name: DEAN_USER.name, qual: "", desig: DEAN_USER.designation, ay: DEAN_USER.ay });
+  const [info, setInfo] = useState({ 
+    name: localStorage.getItem("name") || "", 
+    qual: "", 
+    desig: localStorage.getItem("role") === "dean" ? "Dean" : "", 
+    ay: "2025-2026" 
+  });
   const inf = (k) => (v) => setInfo((p) => ({ ...p, [k]: v }));
 
   const [lectures, setLectures] = useState([
@@ -1065,7 +1071,7 @@ export default function DeanDashboard() {
 
   // ── Computed scores for HOD appraisal ──
   const totalLecScore = lectures.reduce((a, r) => a + n(r.score), 0);
-  const courseFileScore = n(courseFile.score);
+  const courseFileScore = courseFile.reduce((a, r) => a + n(r.score), 0);
   const innovTotal = n(innovScore);
   const projectTotal = projects.reduce((a, r) => a + n(r.score), 0);
   const qualTotal = quals.reduce((a, r) => a + n(r.score), 0);
@@ -1075,7 +1081,7 @@ export default function DeanDashboard() {
   const uniScore = uniActs.reduce((a, r) => a + n(r.score), 0);
   const societyScore = society.reduce((a, r) => a + n(r.score), 0);
   const industryScore = industry.reduce((a, r) => a + n(r.score), 0);
-  const acrScore = acr.reduce((a, r) => a + n(r.hod), 0);
+  const acrScore = acr.reduce((a, r) => a + n(r.score), 0);
   const partATotal = Math.min(200, teachingRaw + stuFeedbackScore + deptScore + uniScore + societyScore + industryScore + acrScore);
 
   const journalScore = journals.reduce((a, r) => a + n(r.score), 0);
@@ -1453,10 +1459,10 @@ export default function DeanDashboard() {
         <div style={{ flex: 1 }} />
         <div style={{ height: 1, background: "#1e293b" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar initials={DEAN_USER.avatar} color="#6366f1" size={34} />
+          <Avatar initials={(localStorage.getItem("name") || "U").split(" ").map(n => n[0]).join("").toUpperCase()} color="#6366f1" size={34} />
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 700 }}>{DEAN_USER.name.split(" ").slice(0, 2).join(" ")}</div>
-            <div style={{ color: "#475569", fontSize: 9 }}>Dean · {DEAN_USER.department.split(" ")[0]}</div>
+            <div style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 700 }}>{(localStorage.getItem("name") || "User").split(" ").slice(0, 2).join(" ")}</div>
+            <div style={{ color: "#475569", fontSize: 9 }}>Dean · {localStorage.getItem("department")?.split(" ")[0] || ""}</div>
           </div>
         </div>
         <button
