@@ -248,8 +248,12 @@ export default function Login() {
 
           {/* ════ LEFT ════ */}
           <div style={s.left}>
+
             <h1 style={s.uniName}>
-              D Y Patil International University, Akurdi, Pune.
+              Performance Based Appraisal System(PBAS)
+            </h1>
+            <h1 style={s.uniName}>
+              D. Y. Patil International University, Akurdi, Pune, Maharashtra
             </h1>
 
             <p style={s.desc}>
